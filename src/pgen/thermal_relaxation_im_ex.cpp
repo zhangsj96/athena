@@ -67,9 +67,8 @@ Real lnPsat(Real T);
 Real Psat(Real T);
 Real rho_sat(Real T);
 Real dlnPsat_dT(Real T);
-Real f_energy(Real T, Real rho_g, Real rho_tot, Real T_gas, const Real dt);
-Real dfdT(Real T, Real rho_tot, const Real dt);
-Real newton_solver(Real T_guess, Real rho_g, Real rho_tot, Real T_gas, int max_iter, Real tol, const Real dt);
+Real f_energy(Real T, Real rho_g, Real rho_tot, Real T_gas);
+Real dfdT(Real T, Real rho_tot);
 
 // Phase transition source function
 void PhaseChange(MeshBlock *pmb, const Real time, const Real dt,
@@ -108,23 +107,18 @@ Real dlnPsat_dT(Real T) {
   return 18946./SQR(T) + 9.3974/T;
 }
 
-Real f_energy(Real T, Real rho_g, Real rho_tot, Real T_gas, const Real dt) {
-  return rho_sat(T) - rho_g + C_v/L_T*rho_tot*(T-T_gas) 
-         + 4.*sigma_b/L_T*std::pow(T,4.0)*(rho_tot-rho_g)*kappa_par*dt;
+Real f_energy(Real T, Real rho_g, Real rho_tot, Real T_gas) {
+  return rho_sat(T) - rho_g + C_v/L_T*rho_tot*(T-T_gas);
 }
 
-Real dfdT(Real T, Real rho_tot, const Real dt) {
-  Real vunit = std::sqrt(kb_over_mu_mH * tunit);
-  Real timeunit = lunit/vunit;
-  return (dlnPsat_dT(T) - 1./T)*rho_sat(T) + C_v/L_T*rho_tot
-         + 4.*sigma_b*kappa_par*timeunit*dt/L_T 
-         * (-(dlnPsat_dT(T) - 1./T)*rho_sat(T)*std::pow(T,4.0) + 4.*(rho_tot-rho_sat(T)*std::pow(T,3.0)));
+Real dfdT(Real T, Real rho_tot) {
+  return (dlnPsat_dT(T) - 1./T)*rho_sat(T) + C_v/L_T*rho_tot;
 }
 
-Real newton_solver(Real T_guess, Real rho_g, Real rho_tot, Real T_gas, int max_iter, Real tol, const Real dt) {
+Real newton_solver(Real T_guess, Real rho_g, Real rho_tot, Real T_gas, int max_iter, Real tol) {
   for (int i = 0; i < max_iter; ++i) {
-    Real fval = f_energy(T_guess, rho_g, rho_tot, T_gas, dt);
-    Real dfdT_val = dfdT(T_guess, rho_tot, dt);
+    Real fval = f_energy(T_guess, rho_g, rho_tot, T_gas);
+    Real dfdT_val = dfdT(T_guess, rho_tot);
     Real delta = -fval / dfdT_val;
     T_guess += delta;
     if (std::abs(delta) < tol) {
@@ -248,7 +242,7 @@ void PhaseChange(MeshBlock *pmb, const Real time, const Real dt,
         Real T_guess = T_gas; // cgs unit
         Real T_new = newton_solver(T_guess, rho_g,
                                    rho_tot, T_gas, 
-                                   max_iter, tol, dt); // cgs unit
+                                   max_iter, tol); // cgs unit
         Real rho_g_new = rho_sat(T_new); // cgs unit
         Real rho_p_new = rho_tot - rho_g_new; // cgs unit
         if (rho_g_new > rho_tot) {
@@ -317,7 +311,7 @@ void SourceFunction(MeshBlock *pmb, const Real time, const Real dt,
               const AthenaArray<Real> &prim, const AthenaArray<Real> &prim_scalar,
               const AthenaArray<Real> &bcc, AthenaArray<Real> &cons,
               AthenaArray<Real> &cons_scalar){
-  // Cooling(pmb, time, dt, prim, prim_scalar, bcc, cons, cons_scalar);
+  Cooling(pmb, time, dt, prim, prim_scalar, bcc, cons, cons_scalar);
   PhaseChange(pmb, time, dt, prim, prim_scalar, bcc, cons, cons_scalar);
   return;
 }

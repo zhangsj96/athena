@@ -13,13 +13,13 @@ file_type   = hdf5       # VTK data dump
 variable   = prim
 xdmf       = 0
 # dcycle     = 1
-dt        = 1.9  # time increment between outputs
+dt        = 0.1  # time increment between outputs
 
 
 <time>
 cfl_number = 0.4     # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1      # cycle limit
-tlim       = 100.0     # time limit
+tlim       = 30     # time limit
 ncycle_out = 1       # interval for stdout summary info
 
 <mesh>
