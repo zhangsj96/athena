@@ -38,6 +38,7 @@
 #include "../nr_radiation/integrators/rad_integrators.hpp"
 #include "../nr_radiation/radiation.hpp"
 #include "../parameter_input.hpp"
+#include "../scalars/scalars.hpp"
 
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
@@ -65,6 +66,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM2,k,j,i))/phydro->u(IDN,k,j,i);
           phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM3,k,j,i))/phydro->u(IDN,k,j,i);
         }
+        Real d0 = 1.0;  // uniform fluid density across the mesh
+        if (NSCALARS > 0) {
+          for (int n=0; n<NSCALARS; ++n) {
+            pscalars->s(n,k,j,i) = d0*phydro->u(IDN,k,j,i);
+          }
+        } 
       }
     }
   }
