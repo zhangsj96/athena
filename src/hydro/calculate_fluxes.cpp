@@ -87,6 +87,18 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw_);
 #if !MAGNETIC_FIELDS_ENABLED  // Hydro:
       RiemannSolver(k, j, is, ie+1, IVX, wl_, wr_, x1flux, dxw_);
+      for (int i=is; i<= ie+1; ++i){
+         Real gamma_ = pmb->peos->GetGamma();
+         Real el = wl_(IPR,i) * gamma_/(gamma_-1.0);
+         Real er = wr_(IPR,i) * gamma_/(gamma_-1.0);
+         Real vadv = 0.5 * (wl_(IVX,i) + wr_(IVX,i));
+         if (vadv > 0.0)
+           x1flux(IEN,k,j,i) = vadv * el;
+         else if (vadv < 0.0)
+           x1flux(IEN,k,j,i) = vadv * er;
+         else
+           x1flux(IEN,k,j,i) = 0.0;
+      }
 #else  // MHD:
       // x1flux(IBY) = (v1*b2 - v2*b1) = -EMFZ
       // x1flux(IBZ) = (v1*b3 - v3*b1) =  EMFY
@@ -194,6 +206,18 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         pmb->pcoord->CenterWidth2(k, j, il, iu, dxw_);
 #if !MAGNETIC_FIELDS_ENABLED  // Hydro:
         RiemannSolver(k, j, il, iu, IVY, wl_, wr_, x2flux, dxw_);
+        for (int i=il; i<= iu; ++i){
+         Real gamma_ = pmb->peos->GetGamma();
+         Real el = wl_(IPR,i) * gamma_/(gamma_-1.0);
+         Real er = wr_(IPR,i) * gamma_/(gamma_-1.0);
+         Real vadv = 0.5 * (wl_(IVY,i) + wr_(IVY,i));
+         if (vadv > 0.0)
+           x2flux(IEN,k,j,i) = vadv * el;
+         else if (vadv < 0.0)
+           x2flux(IEN,k,j,i) = vadv * er;
+         else
+           x2flux(IEN,k,j,i) = 0.0;
+      }
 #else  // MHD:
         // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
         // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
@@ -300,6 +324,18 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         pmb->pcoord->CenterWidth3(k, j, il, iu, dxw_);
 #if !MAGNETIC_FIELDS_ENABLED  // Hydro:
         RiemannSolver(k, j, il, iu, IVZ, wl_, wr_, x3flux, dxw_);
+        for (int i=il; i<= iu; ++i){
+         Real gamma_ = pmb->peos->GetGamma();
+         Real el = wl_(IPR,i) * gamma_/(gamma_-1.0);
+         Real er = wr_(IPR,i) * gamma_/(gamma_-1.0);
+         Real vadv = 0.5 * (wl_(IVZ,i) + wr_(IVZ,i));
+         if (vadv > 0.0)
+           x3flux(IEN,k,j,i) = vadv * el;
+         else if (vadv < 0.0)
+           x3flux(IEN,k,j,i) = vadv * er;
+         else
+           x3flux(IEN,k,j,i) = 0.0;
+      }
 #else  // MHD:
         // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
         // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX

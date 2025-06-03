@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../../../rad-hydro"
+		},
+		{
+			"name": "athena",
+			"path": ".."
+		}
+	],
+	"settings": {}
+}
