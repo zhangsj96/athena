@@ -9,7 +9,7 @@ problem_id       = dsharp              # basename of output filenames
 <output1>
 file_type        = hdf5                # HDF5 data dump
 variable         = prim                # output variables
-dt               = 0.1                 # time increment between outputs
+dt               = 6e-3                 # time increment between outputs
 xdmf             = 0                   # disable XDMF output (VisIt)
 
 # <output2>
@@ -18,9 +18,9 @@ xdmf             = 0                   # disable XDMF output (VisIt)
 # dt               = 0.1                 # time increment between outputs
 # xdmf             = 0                   # disable XDMF output (VisIt)
 
-<output3>
-file_type        = hst                 # HDF5 data dump
-dt               = 1e-9                # time increment between outputs
+# <output3>
+# file_type        = hst                 # HDF5 data dump
+# dt               = 1e-9                # time increment between outputs
 
 <output4>
 file_type        = rst                 # restart file
@@ -55,7 +55,7 @@ ox3_bc           = periodic            # outer-X3 boundary flag
 <meshblock>
 nx1              = 32
 nx2              = 32
-nx3              = 32
+nx3              = 16
 
 <hydro>
 gamma            = 1.4     # gamma = C_p/C_v = 1 + 2/DoF
@@ -69,9 +69,9 @@ polar_angle      = 1                   # add radial rays
 nmu              = 1                   # unused but expected to avoid fatal error
 nzeta            = 4                   # no. of polar angles (0 to pi/2)
 npsi             = 2                   # no. of azimuthal angles (0 to pi)
-n_frequency      = 3                   # no. of frequency groups
-frequency_min    = 1e10                # [0, \nu_min) [k_BT_0/h] < 0 < [Hz]
-frequency_max    = 1e15                # [\nu_max, \infty) [k_BT_0/h] < 0 < [Hz]
+n_frequency      = 8                   # no. of frequency groups
+frequency_min    = 7.3e9               # [0, \nu_min) [k_BT_0/h] < 0 < [Hz]
+frequency_max    = 1.3e15              # [\nu_max, \infty) [k_BT_0/h] < 0 < [Hz]
 unit             = 1                   # compute prat & crat from user-provided units
 T_unit           = 6.14e3              # T_0 [K]
 density_unit     = 4.28e-14            # \rho_0 [g/cm^3]
@@ -92,4 +92,4 @@ t_star           = 9.42e-1             # solar temperature [T_0]
 n_temperature    = 1000                # no. of temperature groups
 temperature_min  = 10                  # min mean opacity temperature [K]
 temperature_max  = 1e4                 # max mean opacity temperature [K]
-frequency_table  = 1                   # custom frequencies [k_BT_0/h] < 0 < [Hz]
+frequency_table  = 0                   # custom frequencies [k_BT_0/h] < 0 < [Hz]

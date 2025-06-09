@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH -p gen -C ib-rome --exclusive
+#SBATCH -N1 --ntasks-per-node=128
+#SBATCH --mail-type=ALL --mail-user=barons2@unlv.nevada.edu
+#SBATCH -t 0:15:00
+
+date
+hostname
+module purge
+module load slurm gcc openmpi hdf5/mpi
+echo
+
+mpirun $ATHENA_YFJ/bin/athena.dsharp_abs-sca-rome -i athinput.dsharp

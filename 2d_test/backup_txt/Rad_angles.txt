@@ -1,6 +1,6 @@
 prat          1.13e+03 
 crat          6.36e+04 
-reduced_c     6.36e+04 
+reduced_c     6.36e+02 
 Vmax          9.00e-01 
 Tunit         6.14e+03 
 Compt         0  
@@ -18,7 +18,7 @@ nu_max:       7.816363e+00
 iteration:    1  
 red_or_black: 0  
 err_limit:    1.000000e-03  
-n_limit:      100  
+n_limit:      1000  
 tau_scheme    1  
  0   8.235294e-01   4.011230e-01   4.011230e-01    2.941176e-02
  1   8.235294e-01   -4.011230e-01   4.011230e-01    2.941176e-02

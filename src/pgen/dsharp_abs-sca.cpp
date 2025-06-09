@@ -623,7 +623,7 @@ Real GetNuPeak(const Real temp) {
 //! \brief Returns the frequency band that contains the given frequency `nu`.
 //========================================================================================
 int GetFreqGroup(const NRRadiation *prad, const Real nu) {
-  int f;
+  int f = 0;
   
   if (nu < prad->nu_grid(1)) {
     f = 0;
@@ -1147,7 +1147,7 @@ void DiskOpacity(MeshBlock *pmb, AthenaArray<Real> &prim) {
           }
           prad->sigma_s(k,j,i,ifr) = prim(IDN,k,j,i)*kappa_sf;
           prad->sigma_a(k,j,i,ifr) = prim(IDN,k,j,i)*kappa_af;
-          prad->sigma_pe(k,j,i,ifr) = prim(IDN,k,j,i)*kappa_pfe; // J_0 coefficient
+          prad->sigma_pe(k,j,i,ifr) = prim(IDN,k,j,i)*kappa_pf; // modified, try same opacity as pf // J_0 coefficient
           if (prad->set_source_flag == 0) {                      // Pure attenuation case
             prad->sigma_p(k,j,i,ifr) = 0;                        // \epsilon_0 coefficient
           } else {

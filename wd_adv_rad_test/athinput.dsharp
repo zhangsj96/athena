@@ -42,7 +42,7 @@ ox1_bc           = user                # outer-X1 boundary flag
 
 nx2              = 32                # Number of zones in X2-direction
 x2min            = 1.2458              # minimum value of X2
-x2max            = 1.8958              # maximum value of X2
+x2max            = 1.895792653589793              # maximum value of X2
 ix2_bc           = user         # inner-X2 boundary flag
 ox2_bc           = user         # outer-X2 boundary flag
 
@@ -55,7 +55,7 @@ ox3_bc           = periodic            # outer-X3 boundary flag
 <meshblock>
 nx1              = 32
 nx2              = 32
-nx3              = 32
+nx3              = 16
 
 <hydro>
 gamma            = 1.4     # gamma = C_p/C_v = 1 + 2/DoF
@@ -67,7 +67,7 @@ reduced_factor   = 1                # Reduced (fraction of) speed of light
 angle_flag       = 1                   # rotate angular system with local coords
 polar_angle      = 1                   # add radial rays
 nmu              = 1                   # unused but expected to avoid fatal error
-nzeta            = 4                   # no. of polar angles (0 to pi/2)
+nzeta            = 16                   # no. of polar angles (0 to pi/2)
 npsi             = 2                   # no. of azimuthal angles (0 to pi)
 n_frequency      = 3                   # no. of frequency groups
 frequency_min    = 1e10                # [0, \nu_min) [k_BT_0/h] < 0 < [Hz]
