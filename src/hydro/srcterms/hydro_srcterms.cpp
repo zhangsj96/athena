@@ -131,24 +131,24 @@ void HydroSourceTerms::AddSourceTerms(const Real time, const Real dt,
   MeshBlock *pmb = pmy_hydro_->pmy_block;
 
   // accleration due to point mass (MUST BE AT ORIGIN)
-  if (flag_point_mass_)
-    PointMass(dt, flux, prim, cons);
+  //if (flag_point_mass_)
+  //  PointMass(dt, flux, prim, cons);
 
   // constant acceleration (e.g. for RT instability)
-  if (g1_ != 0.0 || g2_ != 0.0 || g3_ != 0.0)
-    ConstantAcceleration(dt, flux, prim, cons);
+  //if (g1_ != 0.0 || g2_ != 0.0 || g3_ != 0.0)
+  //  ConstantAcceleration(dt, flux, prim, cons);
 
   // Add new source terms here
-  if (SELF_GRAVITY_ENABLED)
-    SelfGravity(dt, flux, prim, cons);
+  //if (SELF_GRAVITY_ENABLED)
+  //  SelfGravity(dt, flux, prim, cons);
 
   // Sorce terms for orbital advection, shearing box, or rotating system
-  if (flag_shearing_source_ == 1)
-    OrbitalAdvectionSourceTerms(dt, flux, prim, cons);
-  else if (flag_shearing_source_ == 2)
-    ShearingBoxSourceTerms(dt, flux, prim, cons);
-  else if (flag_shearing_source_ == 3)
-    RotatingSystemSourceTerms(dt, flux, prim, cons);
+  //if (flag_shearing_source_ == 1)
+  //  OrbitalAdvectionSourceTerms(dt, flux, prim, cons);
+  //else if (flag_shearing_source_ == 2)
+  //  ShearingBoxSourceTerms(dt, flux, prim, cons);
+  //else if (flag_shearing_source_ == 3)
+  //  RotatingSystemSourceTerms(dt, flux, prim, cons);
 
   // MyNewSourceTerms()
 
