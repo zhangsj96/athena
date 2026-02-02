@@ -28,11 +28,28 @@
 
 namespace {
 // parameters
-Real rho0, zscale, r_star, t_star, kappa_star, kappa_a;
+Real rho0, r_star, t_star, kappa_star, kappa_a;
 Real rhounit, lunit, tunit, tfloor, tceiling;
 Real grazing_mu; // grazing angle (cosine)
-Real gm0, p0_over_r0, dfloor, pfloor;
+Real p0_over_r0, dfloor, pfloor, v_phi, amp;
+int m_mode;
 }
+
+
+void Inner_rad_X1(MeshBlock *pmb, Coordinates *pco, NRRadiation *prad,
+     const AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &ir,
+      Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
+void Outer_rad_X1(MeshBlock *pmb, Coordinates *pco, NRRadiation *prad,
+     const AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &ir,
+      Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
+
+// User-defined boundary conditions for disk simulations
+void DiskInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
+                 Real time, Real dt,
+                 int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+void DiskOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
+                 Real time, Real dt,
+                 int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 // forward declarations (global scope) matching the definitions below
 void DiskRphiOpacity(MeshBlock *pmb, AthenaArray<Real> &prim);
@@ -58,15 +75,26 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   tfloor  = pin->GetOrAddReal("radiation","tfloor", 1e-12);
   tceiling= pin->GetOrAddReal("radiation","tceiling", 1e6);
 
-  grazing_mu = pin->GetOrAddReal("radiation","grazing_mu", 0.1);
+  grazing_mu = pin->GetOrAddReal("problem","grazing_mu", 0.1);
+  m_mode     = pin->GetOrAddInteger("problem","m_mode", 0);
+  amp        = pin->GetOrAddReal("problem","amp", 0.0);
 
   // gravitational parameter and pressure-over-rho normalization
-  gm0 = pin->GetOrAddReal("problem","GM0", 1.0);
   p0_over_r0 = pin->GetOrAddReal("problem","p0_over_r0", 0.0025);
+
+  v_phi = pin->GetOrAddReal("problem","v_phi", 1.0);
 
   dfloor = pin->GetOrAddReal("hydro","dfloor", 1e-12);
   pfloor = pin->GetOrAddReal("hydro","pfloor", 1e-20);
 
+  if (mesh_bcs[BoundaryFace::outer_x1] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x1, DiskOuterX1);
+  }
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
+    if (mesh_bcs[BoundaryFace::outer_x1] == GetBoundaryFlag("user")) {
+      EnrollUserRadBoundaryFunction(BoundaryFace::outer_x1, Outer_rad_X1);
+    }
+  }
   // register explicit source (stellar heating) if radiation is enabled
   if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
     EnrollUserExplicitSourceFunction(StellarHeatingRphi);
@@ -103,12 +131,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IDN,k,j,i) = dens;
         phydro->u(IM1,k,j,i) = 0.0;
         // azimuthal momentum = rho * v_phi (Keplerian)
-        phydro->u(IM2,k,j,i) = 0.0;
+        phydro->u(IM2,k,j,i) = dens * v_phi;
         phydro->u(IM3,k,j,i) = 0.0;
-        if (i == is && j == js && k == ks) {
-          std::cout << phydro->u(IM2,k,j,i)/phydro->u(IDN,k,j,i) << std::endl;
-          std::cout << peos->GetGamma() << std::endl;
-        }
         Real press = p0_over_r0 * dens;
         press = std::max(press, pfloor);
         Real eint = press / (peos->GetGamma() - 1.0);
@@ -184,7 +208,7 @@ void StellarHeatingRphi(MeshBlock *pmb, const Real time, const Real dt,
   // for each column (fixed j) and each k layer, integrate tau from top (i=ie) downwards
   int ncell = ie - is + 1;
   AthenaArray<Real> tau; //, fface, x1area, vol;
-  tau.NewAthenaArray(ncell+2);
+  tau.NewAthenaArray(ncell+1);
   //fface.NewAthenaArray(ncell+1);
   //x1area.NewAthenaArray(pmb->block_size.nx1+1);
   //vol.NewAthenaArray(pmb->ncells1);
@@ -194,13 +218,14 @@ void StellarHeatingRphi(MeshBlock *pmb, const Real time, const Real dt,
     for (int j=js; j<=je; ++j) {
       Real y = pco->x2v(j);
       // compute cumulative tau at faces
-      for (int idx=0; idx<=ncell+1; ++idx) tau(idx)=0.0;
-      for (int i=ie; i>=is; --i) {
+      for (int idx=0; idx<=ncell; ++idx) tau(idx)=0.0;
+      for (int ic=ncell-1; ic>=0; --ic) {
+        int i = is + ic;   
         Real rho = prim(IDN,k,j,i);
         Real dz = pco->dx1f(i);
-        tau(i) = tau(i+1) + kappa_star * rho * dz * rhounit * lunit;
+        tau(ic) = tau(ic+1) + kappa_star * rho * dz * rhounit * lunit;
       }
-
+      //for (int idx=0; idx<=ncell; ++idx) std::cout << idx << "  "  << tau(idx) << std::endl;
       // compute flux at faces
       /*for (int iface = 0; iface<=ncell; ++iface) {
         Real tau_here = tau(iface);
@@ -219,15 +244,21 @@ void StellarHeatingRphi(MeshBlock *pmb, const Real time, const Real dt,
         //Real flux_out = fface(ic+1);
         //Real area_in = x1area(ic);
         //Real area_out = x1area(ic+1);
-        Real F = r_star * r_star * sigma_b * t_star * t_star * t_star * t_star * 0.5 + 0.5*std::sin(y);
-        if (grazing_mu > 0.0) F *= std::exp(-tau(i) / grazing_mu);
+        Real F = r_star * r_star * sigma_b * t_star * t_star * t_star * t_star * (1.+ amp*0.5*(1.+std::sin(m_mode*y))); // (0.5*(1.+std::sin(y)));
+        F = std::max(F, 0.0);
+        if (grazing_mu > 0.0) F *= std::exp(-tau(i-is) / grazing_mu);
+        Real dEdt = prim(IDN,k,j,i) * kappa_star * rhounit * lunit * F;
 
-        Real dE = + dt * prim(IDN,k,j,i) * kappa_star * rhounit * lunit * F;
+        Real dE = dt * dEdt;
         
         // update conserved energy (IEN) while preserving kinetic and mag energy
         Real ekin = 0.5*(SQR(cons(IM1,k,j,i)) + SQR(cons(IM2,k,j,i)) + SQR(cons(IM3,k,j,i)))/cons(IDN,k,j,i);
         
         Real eint = cons(IEN,k,j,i) - ekin;
+        //std::cout <<  "i: " << i << std::endl;
+        //std::cout <<  "dE/dt: " << dEdt << std::endl;
+        //std::cout <<  "dE: " << dE << std::endl;
+        //std::cout << "before eint: " << eint << std::endl;
         eint += dE;
 
         //if (k==ks && j==js){
@@ -244,6 +275,47 @@ void StellarHeatingRphi(MeshBlock *pmb, const Real time, const Real dt,
       }
     }
   }
+}
+
+void DiskOuterX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
+                 Real time, Real dt,
+                 int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+        for (int i=1; i<=ngh; ++i) {
+          prim(IM1,k,j,iu+i) = prim(IM1,k,j,iu);
+          prim(IM2,k,j,iu+i) = prim(IM2,k,j,iu);
+          prim(IM3,k,j,iu+i) = prim(IM3,k,j,iu);
+          if (NON_BAROTROPIC_EOS)
+            prim(IEN,k,j,iu+i) = prim(IEN,k,j,iu);
+        }
+      }
+    }
+}
+
+void Outer_rad_X1(MeshBlock *pmb, Coordinates *pco, NRRadiation *prad,
+     const AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &ir,
+      Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh)
+{
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
+      for (int i=1; i<=ngh; ++i) {  
+        for(int ifr=0; ifr<prad->nfreq; ++ifr){
+          for(int n=0; n<prad->nang; ++n){
+            Real& miux=prad->mu(0,k,j,is,n);
+            if(miux > 0.0){
+              ir(k,j,ie+i,ifr*prad->nang+n)
+                = ir(k,j,ie,ifr*prad->nang+n);
+            }else{
+              ir(k,j,ie+i,ifr*prad->nang+n) = 0.;
+            }
+          }
+        }
+      }//i
+    }//j
+  }//k
+  return;
 }
 
 //========================================================================================
