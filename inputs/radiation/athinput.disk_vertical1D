@@ -1,0 +1,91 @@
+<comment>
+problem   = 1D vertical slab with grazing-angle stellar irradiation
+reference =
+configure = --prob=disk_vertical1D -nr_radiation --coord=cartesian
+or
+configure = --prob=disk_vertical1D -implicit_radiation --coord=cartesian
+
+<job>
+problem_id  = disk_vertical1D
+
+<output1>
+file_type   = hst
+dt          = 0.01
+
+<output2>
+file_type   = hdf5
+variable    = prim
+xdmf        = 0
+dt          = 0.1
+
+<time>
+cfl_number  = 0.3
+nlim        = -1
+tlim        = 1.0
+integrator  = vl2
+xorder      = 2
+ncycle_out  = 1
+
+<mesh>
+# 1D vertical domain, top boundary injects the stellar beam
+nx1         = 256
+x1min       = 0.0
+x1max       = 1.0
+x1rat       = 1.0
+ix1_bc      = reflecting
+ox1_bc      = user
+
+nx2         = 1
+x2min       = 0.0
+x2max       = 1.0
+ix2_bc      = periodic
+ox2_bc      = periodic
+
+nx3         = 1
+x3min       = 0.0
+x3max       = 1.0
+ix3_bc      = periodic
+ox3_bc      = periodic
+
+refinement  = None
+
+<meshblock>
+nx1         = 64
+nx2         = 1
+nx3         = 1
+
+<hydro>
+gamma       = 1.4
+dfloor      = 1.0e-12
+pfloor      = 1.0e-20
+
+<radiation>
+# Use a moderately fine quadrature so the two-bin interpolation can resolve grazing_mu
+nmu             = 16
+angle_flag      = 0
+
+prat            = 1.0
+crat            = 1.0
+reduced_factor  = 1
+error_limit     = 1.0e-12
+
+rhounit         = 1.0
+Tunit           = 1.0
+lunit           = 1.0
+
+tfloor          = 1.0e-12
+tceiling        = 1.0e6
+
+# Stellar irradiation parameters used by the outer_x1 user radiation BC
+r_star          = 1.0e-4
+t_star          = 1.0
+kappa_star      = 1.0
+kappa_a         = 0.0
+
+# No explicit source term in this pgen; irradiation is injected through the BC
+source_flag     = 0
+
+<problem>
+rho0            = 1.0
+p0_over_r0      = 0.0025
+grazing_mu      = 0.1

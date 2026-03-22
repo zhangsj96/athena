@@ -23,6 +23,9 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -373,6 +376,38 @@ void MeshBlock::UserWorkInLoop(void){
         }
       }
     }
+  }
+  return;
+}
+
+void Mesh::UserWorkInLoop(void){
+  // Collect per-block tau contributions into global cumulative tau along x1.
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
+    MeshBlock *pmb = my_blocks(0);
+    if (pmb == nullptr || pmb->pnrrad == nullptr) return;
+    int nfreq = pmb->pnrrad->nfreq;
+
+#ifdef MPI_PARALLEL
+    // Gather sparse block-boundary contributions from all ranks.
+    int ntot = mesh_size.nx3*mesh_size.nx2*nrbx1*nfreq;
+    MPI_Allreduce(MPI_IN_PLACE,
+                  ruser_mesh_data[0].data(),
+                  ntot, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
+#endif
+
+    // Convert boundary increments to cumulative tau from inner->outer x1.
+    for (int tk=0; tk<mesh_size.nx3; tk++){
+      for (int tj=0; tj<mesh_size.nx2; tj++){
+        for (int ib=1; ib<nrbx1; ib++){
+          for (int ifr=0; ifr<nfreq; ifr++){
+            ruser_mesh_data[0](tk,tj,ib,ifr) += ruser_mesh_data[0](tk,tj,ib-1,ifr);
+          }
+        }
+      }
+    }
+
+    // Reset init flag so meshblock pass refreshes entries next cycle.
+    iuser_mesh_data[0](0) = 0;
   }
   return;
 }
